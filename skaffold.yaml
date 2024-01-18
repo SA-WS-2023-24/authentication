@@ -1,0 +1,16 @@
+apiVersion: skaffold/v4beta8
+kind: Config
+metadata:
+  name: authentication-service
+build:
+  artifacts:
+    - image: x-mister/authentication-service
+      docker:
+        dockerfile: Dockerfile
+  local: {}
+manifests:
+  rawYaml:
+    - k8s/app*
+    - k8s/psql*
+#    - k8s/rabbit*
+    - k8s/keycloak*

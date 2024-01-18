@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  database:
+    image: postgres:12
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./:/app/
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    networks:
+      - internal
+
+  rabbitmq-container:
+    image: rabbitmq:3.11-management
+    hostname: rabbitmq-container
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    networks:
+      - internal
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.4
+    container_name: keycloak
+    ports:
+      - "8080:8080"
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: jdbc:postgresql://database:5432/postgres
+      DB_DATABASE: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+    depends_on:
+      - database
+
+  app:
+    container_name: spring-boot
+    command: java -jar target/demo-0.0.1-SNAPSHOT.jar
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - database
+      - rabbitmq-container
+    volumes:
+      - ./:/app/app
+    links:
+      - database
+    networks:
+      - internal
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/postgres
+      - spring_rabbitmq_host=rabbitmq-container
+      - spring_rabbitmq_port=5672
+
+networks:
+  internal:
+    name: internal
+
+
+
