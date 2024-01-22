@@ -28,13 +28,13 @@ spec:
               value: user
             - name: DB_VENDOR
               value: POSTGRES
-            - name: DB_ADDR
+            - name: KC_DB_URL
+              value: jdbc:postgresql://postgres:5432/postgres
+            - name: KC_DB
               value: postgres
-            - name: DB_DATABASE
+            - name: KC_DB_USERNAME
               value: postgres
-            - name: DB_USER
-              value: postgres
-            - name: DB_PASSWORD
+            - name: KC_DB_PASSWORD
               value: postgres
           ports:
             - containerPort: 8080
