@@ -1,56 +1,38 @@
 //package com.htwberlin.userservice.core.domain.config;
 //
-//import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
-//import org.keycloak.adapters.springsecurity.KeycloakConfiguration;
-//import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 //import org.springframework.context.annotation.Bean;
 //import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 //import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-//import org.springframework.security.config.annotation.web.builders.WebSecurity;
 //import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-//import org.springframework.security.core.session.SessionRegistryImpl;
-//import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
-//import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+//import org.springframework.security.config.http.SessionCreationPolicy;
+//import org.springframework.security.web.SecurityFilterChain;
 //
 //@Configuration
 //@EnableWebSecurity
-//@KeycloakConfiguration
-//public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
-//    @Override
-//    public void init(WebSecurity builder) throws Exception {
-//
-//    }
-//
-//    @Override
-//    public void configure(WebSecurity builder) throws Exception {
-//
-//    }
-//
-//    @Autowired
-//    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-//        auth.authenticationProvider(keycloakAuthenticationProvider());
-//    }
-//
+//public class SecurityConfig {
 //    @Bean
-//    @Override
-//    @ConditionalOnMissingBean(SessionAuthenticationStrategy.class)
-//    protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
-//        return new RegisterSessionAuthenticationStrategy(new SessionRegistryImpl());
-//    }
+//    public SecurityFilterChain configure(HttpSecurity http) throws Exception {
+//        http
+//            .oauth2Client()
+//            .and()
+//            .oauth2Login()
+//            .tokenEndpoint()
+//            .and()
+//            .userInfoEndpoint();
 //
-//    @Bean
-//    public KeycloakSpringBootConfigResolver keycloakConfigResolver() {
-//        return new KeycloakSpringBootConfigResolver();
-//    }
+//        http
+//            .sessionManagement()
+//            .sessionCreationPolicy(SessionCreationPolicy.ALWAYS);
 //
-//    @Override
-//    protected void configure(HttpSecurity http) throws Exception {
-//        super.configure(http);
-//        http.authorizeRequests()
-//            .requestMatchers(request -> request.getHeader("Authorization") != null).permitAll();
-//    }
+//        http
+//            .authorizeHttpRequests()
+//            .requestMatchers("/unauthenticated", "/oauth2/**", "/login/**").permitAll()
+//            .anyRequest()
+//            .fullyAuthenticated()
+//            .and()
+//            .logout()
+//            .logoutSuccessUrl("http://localhost:8080/realms/external/protocol/openid-connect/logout?redirect_uri=http://localhost:8081/");
 //
+//        return http.build();
+//    }
 //}

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.security.Principal;
 
 @RestController
+@RequestMapping("/v1/")
 public class KeycloakController {
   @RequestMapping("/auth")
   public String handleRequest(Principal principal) {

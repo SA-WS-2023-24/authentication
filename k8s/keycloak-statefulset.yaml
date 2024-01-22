@@ -18,10 +18,14 @@ spec:
           image: quay.io/keycloak/keycloak:23.0.4
           args: ["start-dev"]
           env:
+            - name: KEYCLOAK_ADMIN
+              value: admin
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: admin
             - name: KEYCLOAK_USER
-              value: admin
+              value: user
             - name: KEYCLOAK_PASSWORD
-              value: admin
+              value: user
             - name: DB_VENDOR
               value: POSTGRES
             - name: DB_ADDR
@@ -36,9 +40,9 @@ spec:
             - containerPort: 8080
               name: keycloak
           volumeMounts:
-            - name: keycloak-persistance-storage
-              mountPath: /var/lib/keycloak
+            - name: keycloak-persistence-storage
+              mountPath: /var/lib/keycloak/data
       volumes:
-        - name: keycloak-persistance-storage
+        - name: keycloak-persistence-storage
           persistentVolumeClaim:
             claimName: keycloak-pv-claim

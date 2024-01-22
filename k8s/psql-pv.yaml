@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: keycloak-pv
+  name: postgres-pv
 spec:
   capacity:
     storage: 1Gi
@@ -10,4 +10,4 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: do-block-storage
   hostPath:
-    path: keycloak-data
+    path: /mnt/data

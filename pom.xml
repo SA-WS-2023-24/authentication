@@ -86,18 +86,31 @@
 <!--   <version>23.0.4</version>-->
 <!--  </dependency>-->
   <dependency>
-   <groupId>org.springframework.boot</groupId>
-   <artifactId>spring-boot-starter-security</artifactId>
-   <version>1.5.22.RELEASE</version>
+   <groupId>org.keycloak</groupId>
+   <artifactId>keycloak-admin-client</artifactId>
+   <version>23.0.4</version>
   </dependency>
   <dependency>
-   <groupId>org.keycloak.bom</groupId>
-   <artifactId>keycloak-adapter-bom</artifactId>
-   <version>23.0.4</version>
-    <type>pom</type>
-    <scope>import</scope>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-security</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-oauth2-client</artifactId>
   </dependency>
  </dependencies>
+
+ <dependencyManagement>
+  <dependencies>
+   <dependency>
+    <groupId>org.keycloak.bom</groupId>
+    <artifactId>keycloak-adapter-bom</artifactId>
+    <version>23.0.4</version>
+    <type>pom</type>
+    <scope>import</scope>
+   </dependency>
+  </dependencies>
+ </dependencyManagement>
 
  <build>
   <plugins>
