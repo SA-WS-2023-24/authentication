@@ -42,7 +42,12 @@ spec:
           volumeMounts:
             - name: keycloak-persistence-storage
               mountPath: /var/lib/keycloak/data
+            - name: realm-config
+              mountPath: /opt/keycloak/realms
       volumes:
         - name: keycloak-persistence-storage
           persistentVolumeClaim:
             claimName: keycloak-pv-claim
+        - name: realm-config
+          configMap:
+            name: keycloak-config
