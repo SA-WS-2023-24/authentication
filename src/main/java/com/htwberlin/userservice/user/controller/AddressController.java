@@ -25,7 +25,7 @@
 //        return addressService.getAllAddressesForUser(productId);
 //    }
 //
-//    @DeleteMapping("/addresses/{id}")
+//    @DeleteMapping("/address/{id}")
 //    public @ResponseBody void deleteAddress(@RequestBody Address address) {
 //        addressService.deleteAddress(address);
 //    }

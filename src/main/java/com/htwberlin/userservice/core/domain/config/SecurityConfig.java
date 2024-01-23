@@ -1,6 +1,9 @@
 package com.htwberlin.userservice.core.domain.config;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +30,9 @@ import java.util.stream.Collectors;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+  private static final String REALM_ACCESS_CLAIM = "realm_access";
+  private static final String ROLES_CLAIM = "roles";
+
   @Value("keycloak.resource")
   private String clientId;
 
@@ -35,17 +41,27 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.cors(cors -> cors.disable()).csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests((authz) -> authz.requestMatchers("/users/signup", "/users/login")
-            .permitAll().anyRequest().authenticated())
+        http.authorizeHttpRequests((authz) -> authz
+                .requestMatchers("/users/signup", "/users/login", "v1/test")
+            .permitAll()
+            .anyRequest()
+            .authenticated())
         .sessionManagement((sessionManagement) -> {
-          sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        }).exceptionHandling(exceptionHandling -> exceptionHandling
+          sessionManagement
+              .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        })
+            .exceptionHandling(exceptionHandling -> exceptionHandling
             .authenticationEntryPoint((request, response, ex) -> {
-              response.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
+              response
+                  .sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                      ex.getMessage());
             }))
         .oauth2ResourceServer(oauth2 -> oauth2
-            .jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakJwtAuthenticationConverter())));
+            .jwt(jwt -> jwt
+                .jwtAuthenticationConverter(new KeycloakJwtAuthenticationConverter())));
+//        .logout(logout -> logout
+//            .addLogoutHandler(keycloakLogoutHandler)
+//            .logoutSuccessUrl("/"));
 
     return http.build();
   }
@@ -76,12 +92,12 @@ public class SecurityConfig {
 
     @Override
     public Collection<GrantedAuthority> convert(Jwt source) {
-      Map<String, Object> realmAccess = source.getClaim("realm_access");
+      Map<String, Object> realmAccess = source.getClaim(REALM_ACCESS_CLAIM);
       if (Objects.isNull(realmAccess)) {
         return Collections.emptySet();
       }
 
-      Object roles = realmAccess.get("roles");
+      Object roles = realmAccess.get(ROLES_CLAIM);
       if (Objects.isNull(roles) || !Collection.class.isAssignableFrom(roles.getClass())) {
         return Collections.emptySet();
       }
