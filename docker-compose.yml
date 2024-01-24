@@ -15,14 +15,14 @@ services:
     networks:
       - internal
 
-  rabbitmq-container:
-    image: rabbitmq:3.11-management
-    hostname: rabbitmq-container
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    networks:
-      - internal
+#  rabbitmq-container:
+#    image: rabbitmq:3.11-management
+#    container_name: rabbitmq-container
+#    ports:
+#      - "15672:15672"
+#      - "5672:5672"
+#    networks:
+#      - internal
 
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.4

@@ -24,6 +24,6 @@ public class UserController {
 
     @GetMapping("/test")
     public @ResponseBody String test() {
-        return "Hello World";
+        return this.keycloakService.getAccessToken();
     }
 }

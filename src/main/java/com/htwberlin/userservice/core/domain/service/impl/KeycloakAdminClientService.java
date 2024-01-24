@@ -39,6 +39,11 @@ public class KeycloakAdminClientService implements IKeycloakAdminClientService {
         .build();
   }
 
+  @Override
+  public String getAccessToken() {
+    return this.keycloak.tokenManager().getAccessTokenString();
+  }
+
 
   @Override
   public void createUser() {
