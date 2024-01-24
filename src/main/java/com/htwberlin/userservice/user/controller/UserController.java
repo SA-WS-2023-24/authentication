@@ -1,8 +1,9 @@
 package com.htwberlin.userservice.user.controller;
 
 import com.htwberlin.userservice.core.domain.service.interfaces.IKeycloakAdminClientService;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/v1/")
@@ -16,8 +17,9 @@ public class UserController {
     }
 
     @PostMapping(path = "/user")
-    public @ResponseBody void create() {
-        keycloakService.createUser();
+    public @ResponseBody String create() {
+        this.keycloakService.createUser();
+        return "user created";
     }
 
     @GetMapping("/test")

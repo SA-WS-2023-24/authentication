@@ -12,5 +12,5 @@ manifests:
   rawYaml:
     - k8s/app*
     - k8s/psql*
-#    - k8s/rabbit*
+    # - k8s/rabbit*
     - k8s/keycloak*

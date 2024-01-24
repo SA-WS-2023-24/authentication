@@ -50,7 +50,8 @@ services:
       - "8081:8081"
     depends_on:
       - database
-      - rabbitmq-container
+      - keycloak
+#      - rabbitmq-container
     volumes:
       - ./:/app/app
     links:
@@ -59,8 +60,8 @@ services:
       - internal
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/postgres
-      - spring_rabbitmq_host=rabbitmq-container
-      - spring_rabbitmq_port=5672
+#      - spring_rabbitmq_host=rabbitmq-container
+#      - spring_rabbitmq_port=5672
 
 networks:
   internal:
