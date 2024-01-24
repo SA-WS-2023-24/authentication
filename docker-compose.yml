@@ -39,27 +39,31 @@ services:
       KEYCLOAK_PASSWORD: admin
     depends_on:
       - database
+    networks:
+      - internal
 
   app:
     container_name: spring-boot
-    command: java -jar target/demo-0.0.1-SNAPSHOT.jar
+    command: ["java", "-jar", "target/demo-0.0.1-SNAPSHOT.jar"]
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
     depends_on:
-      - database
+#      - database
       - keycloak
 #      - rabbitmq-container
     volumes:
       - ./:/app/app
     links:
-      - database
+#      - database
+      - keycloak
     networks:
       - internal
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/postgres
+      - KEYCLOAK_AUTH_SERVER_URL=http://keycloak:8080/auth
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/postgres
 #      - spring_rabbitmq_host=rabbitmq-container
 #      - spring_rabbitmq_port=5672
 

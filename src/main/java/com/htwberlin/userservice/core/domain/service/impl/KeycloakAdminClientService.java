@@ -14,29 +14,9 @@ import org.springframework.stereotype.Service;
 public class KeycloakAdminClientService implements IKeycloakAdminClientService {
   private final Keycloak keycloak;
 
-  public KeycloakAdminClientService(
-      @Value("${keycloak.username}") String username,
-      @Value("${keycloak.password}") String password,
-      @Value("${keycloak.auth-server-url}") String serverUrl,
-      @Value("${keycloak.realm}") String realm,
-      @Value("${keycloak.resource}") String clientId,
-      @Value("${keycloak.credentials.secret}") String clientSecret) {
+  public KeycloakAdminClientService(Keycloak keycloak) {
 
-//    this.keycloak = Keycloak.getInstance(
-//        serverUrl,
-//        realm,
-//        clientId,
-//        clientSecret,
-//        clientId
-//    );
-    this.keycloak = KeycloakBuilder.builder()
-        .username(username)
-        .password(password)
-        .serverUrl(serverUrl)
-        .realm(realm)
-        .clientId(clientId)
-        .clientSecret(clientSecret)
-        .build();
+    this.keycloak = keycloak;
   }
 
   @Override
