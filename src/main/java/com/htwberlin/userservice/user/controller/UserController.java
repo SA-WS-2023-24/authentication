@@ -1,6 +1,6 @@
 package com.htwberlin.userservice.user.controller;
 
-import com.htwberlin.userservice.core.domain.service.interfaces.IKeycloakAdminClientService;
+//import com.htwberlin.userservice.core.domain.service.interfaces.IKeycloakAdminClientService;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -11,22 +11,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 @RequestMapping("/v1/")
 public class UserController {
 
-    private final IKeycloakAdminClientService keycloakService;
-
-    @Autowired
-    public UserController(IKeycloakAdminClientService keycloakService) {
-        this.keycloakService = keycloakService;
-    }
+//    private final IKeycloakAdminClientService keycloakService;
+//
+//    @Autowired
+//    public UserController(IKeycloakAdminClientService keycloakService) {
+//        this.keycloakService = keycloakService;
+//    }
 
     @PostMapping(path = "/user")
     public @ResponseBody String create() {
         OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-        this.keycloakService.createUser();
-        return "user created";
+//        this.keycloakService.createUser();
+        return "user created: " + user.getName();
     }
 
     @GetMapping("/test")
     public @ResponseBody String test() {
-        return this.keycloakService.getAccessToken();
+        return "test";
     }
 }

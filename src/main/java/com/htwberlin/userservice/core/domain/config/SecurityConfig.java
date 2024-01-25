@@ -53,13 +53,13 @@ public class SecurityConfig {
           .sessionCreationPolicy(SessionCreationPolicy.ALWAYS);
     http
         .authorizeRequests()
-          .requestMatchers("/v1/test")
+          .requestMatchers("/v1/test", "/oauth2/**", "/login/**")
             .permitAll()
           .anyRequest()
             .fullyAuthenticated()
         .and()
         .logout()
-        .logoutSuccessUrl("ttp://localhost:8080/realms/master/protocol/openid-connect/logout?redirect_uri=http://localhost:8081/");
+        .logoutSuccessUrl("http://localhost:8080/realms/master/protocol/openid-connect/logout?redirect_uri=http://localhost:8081/");
 
 //        http.authorizeHttpRequests((authz) -> authz
 //                .requestMatchers( "/v1/test")
