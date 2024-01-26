@@ -1,132 +1,64 @@
 package com.htwberlin.userservice.core.domain.config;
 
-import jakarta.servlet.http.HttpServletResponse;
-import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.keycloak.adapters.authorization.integration.jakarta.ServletPolicyEnforcerFilter;
+import org.keycloak.adapters.authorization.spi.ConfigurationResolver;
+import org.keycloak.adapters.authorization.spi.HttpRequest;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
+import org.keycloak.util.JsonSerialization;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.util.Assert;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
-//@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-//  private static final String REALM_ACCESS_CLAIM = "realm_access";
-//  private static final String ROLES_CLAIM = "roles";
-//
-//  @Value("keycloak.resource")
-//  private String clientId;
-//
-//  @Value("keycloak.authority-prefix")
-//  private String authorityPrefix;
+  @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+  String jwkSetUri;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        .oauth2Client()
-          .and()
-        .oauth2Login()
-        .tokenEndpoint()
-          .and()
-        .userInfoEndpoint();
-    http
-        .sessionManagement()
-          .sessionCreationPolicy(SessionCreationPolicy.ALWAYS);
-    http
-        .authorizeRequests()
-          .requestMatchers("/v1/test", "/oauth2/**", "/login/**")
-            .permitAll()
-          .anyRequest()
-            .fullyAuthenticated()
-        .and()
-        .logout()
-        .logoutSuccessUrl("http://localhost:8080/realms/master/protocol/openid-connect/logout?redirect_uri=http://localhost:8081/");
-
-//        http.authorizeHttpRequests((authz) -> authz
-//                .requestMatchers( "/v1/test")
-//            .permitAll()
-//            .anyRequest()
-//            .authenticated())
-//        .sessionManagement((sessionManagement) -> {
-//          sessionManagement
-//              .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-//        })
-//            .exceptionHandling(exceptionHandling -> exceptionHandling
-//            .authenticationEntryPoint((request, response, ex) -> {
-//              response
-//                  .sendError(HttpServletResponse.SC_UNAUTHORIZED,
-//                      ex.getMessage());
-//            }))
-//        .oauth2ResourceServer(oauth2 -> oauth2
-//            .jwt(jwt -> jwt
-//                .jwtAuthenticationConverter(new KeycloakJwtAuthenticationConverter())));
-//        .logout(logout -> logout
-//            .addLogoutHandler(keycloakLogoutHandler)
-//            .logoutSuccessUrl("/"));
+    http.
+        authorizeRequests((authorize) -> authorize
+            .anyRequest()
+            .authenticated()
+        )
+        .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
+        .addFilterAfter(createPolicyEnforceFilter(), BearerTokenAuthenticationFilter.class);
 
     return http.build();
   }
 
-//  class KeycloakJwtAuthenticationConverter extends JwtAuthenticationConverter {
-//
-//    public KeycloakJwtAuthenticationConverter() {
-//      KeycloakJwtAuthoritiesConverter grantedAuthoritiesConverter =
-//          new KeycloakJwtAuthoritiesConverter();
-//      grantedAuthoritiesConverter.setAuthorityPrefix(authorityPrefix);
-//
-//      setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-//      setPrincipalClaimName(clientId);
-//    }
-//  }
-//
-//  class KeycloakJwtAuthoritiesConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
-//
-//    private String authorityPrefix = "";
-//
-//    public KeycloakJwtAuthoritiesConverter() {}
-//
-//    public KeycloakJwtAuthoritiesConverter setAuthorityPrefix(String authorityPrefix) {
-//      Assert.notNull(authorityPrefix, "authorityPrefix cannot be null");
-//      this.authorityPrefix = authorityPrefix;
-//      return this;
-//    }
-//
-//    @Override
-//    public Collection<GrantedAuthority> convert(Jwt source) {
-//      Map<String, Object> realmAccess = source.getClaim(REALM_ACCESS_CLAIM);
-//      if (Objects.isNull(realmAccess)) {
-//        return Collections.emptySet();
-//      }
-//
-//      Object roles = realmAccess.get(ROLES_CLAIM);
-//      if (Objects.isNull(roles) || !Collection.class.isAssignableFrom(roles.getClass())) {
-//        return Collections.emptySet();
-//      }
-//
-//      Collection<?> rolesCollection = (Collection<?>) roles;
-//
-//      return rolesCollection.stream().filter(String.class::isInstance)
-//          .map(x -> new SimpleGrantedAuthority(authorityPrefix + x)).collect(Collectors.toSet());
-//    }
-//  }
-//
+  private ServletPolicyEnforcerFilter createPolicyEnforceFilter() {
+    PolicyEnforcerConfig config;
+
+    try {
+      config = JsonSerialization
+          .readValue(
+              getClass().getResourceAsStream("/policy-enforcer.json"),
+          PolicyEnforcerConfig.class);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return new ServletPolicyEnforcerFilter(new ConfigurationResolver() {
+      @Override
+      public PolicyEnforcerConfig resolve(HttpRequest httpRequest) {
+        return config;
+      }
+    });
+  }
+
+  @Bean
+  JwtDecoder jwtDecoder() {
+    return NimbusJwtDecoder.withJwkSetUri(this.jwkSetUri).build();
+  }
 }
