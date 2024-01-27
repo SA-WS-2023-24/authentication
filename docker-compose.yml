@@ -62,7 +62,7 @@ services:
     networks:
       - internal
     environment:
-      - KEYCLOAK_AUTH_SERVER_URL=http://keycloak:8080/auth
+      - KEYCLOAK_AUTH_SERVER_URL=http://keycloak:8080
 #      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/postgres
 #      - spring_rabbitmq_host=rabbitmq-container
 #      - spring_rabbitmq_port=5672

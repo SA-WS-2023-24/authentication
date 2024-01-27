@@ -1,100 +1,132 @@
-//package com.htwberlin.userservice;
-//
-//import com.htwberlin.userservice.core.domain.config.UserConfigurationProperties;
-//import com.htwberlin.userservice.core.domain.model.User;
-//import org.keycloak.admin.client.Keycloak;
-//import org.keycloak.representations.idm.ClientRepresentation;
-//import org.keycloak.representations.idm.CredentialRepresentation;
-//import org.keycloak.representations.idm.RealmRepresentation;
-//import org.keycloak.representations.idm.UserRepresentation;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.CommandLineRunner;
-//import org.springframework.stereotype.Component;
-//
-//import java.util.ArrayList;
-//import java.util.List;
-//import java.util.Optional;
-//
-//@Component
-//public class KeycloakLoader implements CommandLineRunner {
-//  private static final String REALM_NAME = "pcpartshop";
-//  private static final Logger LOGGER = LoggerFactory.getLogger(KeycloakLoader.class);
-//  private final Keycloak keycloak;
-//  private UserConfigurationProperties userConfigurationProperties;
-//
-//  @Autowired
-//  public KeycloakLoader(Keycloak keycloak) {
-//    this.keycloak = keycloak;
-//  }
-//
-//  @Override
-//  public void run(String... args) throws Exception {
-//        LOGGER.info("Initializing Keycloak...");
-//
-//        try {
-//          this.keycloak.realms().findAll();
-//          LOGGER.info("Successful connected to keycloak");
-//        } catch (Exception e) {
-//          LOGGER.error("Could not connect to keycloak. Please check your configuration", e);
-//          return;
-//        }
-//
-//        LOGGER.debug("Check if Realm exits...");
-//
-//        Optional<RealmRepresentation> representationOptional = keycloak.realms().findAll().stream()
-//            .filter(r -> r.getRealm().equals(REALM_NAME))
-//            .findAny();
-//
-//        if (representationOptional.isPresent()) {
-//          LOGGER.info("Realm exists. Stop setup");
-//          return;
-//        }
-//
-//        LOGGER.info("Realm does not exist. Start setup");
-//        RealmRepresentation realmRepresentation = new RealmRepresentation();
-//        realmRepresentation.setRealm(REALM_NAME);
-//        realmRepresentation.setEnabled(true);
-//        realmRepresentation.setRegistrationAllowed(true);
-//
-//        // Client
-//        ClientRepresentation clientRepresentation = new ClientRepresentation();
-//        clientRepresentation.setClientId("spring-backend");
-//        clientRepresentation.setDirectAccessGrantsEnabled(true);
-//        clientRepresentation.setPublicClient(true);
-//        List<ClientRepresentation> clients = new ArrayList<>();
-//        clients.add(clientRepresentation);
-//        realmRepresentation.setClients(clients);
-//
-//        // setup Users
-//        List<UserRepresentation> userList = new ArrayList<>();
-//        for (User userProps : userConfigurationProperties.getCredentials()) {
-//
-//          UserRepresentation userRepresentation = getUserRepresentation(userProps);
-//
-//          userList.add(userRepresentation);
-//        }
-//        realmRepresentation.setUsers(userList);
-//
-//        keycloak.realms().create(realmRepresentation);
-//
-//        LOGGER.info("Keycloak setup finished");
-//      }
-//
-//  private static UserRepresentation getUserRepresentation(User userProps) {
-//    CredentialRepresentation credentialRepresentation = new CredentialRepresentation();
-//    credentialRepresentation.setType(CredentialRepresentation.PASSWORD);
-//    credentialRepresentation.setValue(userProps.getPassword());
-//    UserRepresentation userRepresentation = new UserRepresentation();
-//    userRepresentation.setUsername(userProps.getUsername());
-//    List<CredentialRepresentation> credentials = new ArrayList<>();
-//    credentials.add(credentialRepresentation);
-//    userRepresentation.setCredentials(credentials);
-//    userRepresentation.setEnabled(true);
-//    List<String> realmRoles = new ArrayList<>();
-//    realmRoles.add(userProps.getRole().name());
-//    userRepresentation.setRealmRoles(realmRoles);
-//    return userRepresentation;
-//  }
-//}
+package com.htwberlin.userservice;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.List;
+
+@Component
+public class KeycloakLoader implements CommandLineRunner {
+
+  @Value("${keycloak.server-url}")
+  private String kcServerUrl;
+
+  @Value("${keycloak.realm}")
+  private String kcRealm;
+
+  private final Keycloak keycloak;
+  private static final Logger LOGGER = LoggerFactory.getLogger(KeycloakLoader.class);
+
+  public KeycloakLoader(Keycloak keycloak) {
+    this.keycloak = keycloak;
+  }
+
+  @Override
+  public void run(String... args) {
+    this.connectToKeycloak();
+    if (this.realmExists(kcRealm)) {
+      LOGGER.info("Realm exists. Stopping setup...");
+    } else {
+      LOGGER.info("Realm does not exist. Setting up...");
+      this.setupKeycloak();
+      LOGGER.info("Setup complete.");
+    }
+  }
+
+  private void setupKeycloak() {
+    RealmRepresentation realm = this.setupRealm(kcRealm);
+    UserRepresentation user = this.setupUser();
+    ClientRepresentation client = this.setupClient(kcRealm);
+
+    this.keycloak.realms().create(realm);
+    this.keycloak.realm(kcRealm).clients().create(client);
+    this.keycloak.realm(kcRealm).users().create(user);
+  }
+
+  private void connectToKeycloak() {
+    int responseCode;
+    boolean isReachable = false;
+    while (!isReachable) {
+      try {
+        LOGGER.info("Attempting to connect to Keycloak server at: " + kcServerUrl);
+        URL url = new URL(kcServerUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.connect();
+        responseCode = connection.getResponseCode();
+        if (responseCode == 200) {
+          isReachable = true;
+        } else {
+          LOGGER.error("Keycloak server is not reachable. Response code: " + responseCode);
+          LOGGER.info("Retrying in a second...");
+          Thread.sleep(1000);
+        }
+      } catch (IOException | InterruptedException e) {
+        LOGGER.error("Keycloak server is not reachable. " + e.getMessage());
+        LOGGER.info("Retrying in 5 seconds...");
+        try {
+          Thread.sleep(5000);
+        } catch (InterruptedException ex) {
+          LOGGER.error("Interrupted while waiting to retry connection to Keycloak server.");
+          LOGGER.info("Closing thread");
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+  }
+
+  private RealmRepresentation setupRealm(String name) {
+    RealmRepresentation realm = new RealmRepresentation();
+    realm.setRealm(name);
+    realm.setEnabled(true);
+    realm.setRegistrationAllowed(true);
+    realm.setRegistrationEmailAsUsername(true);
+    realm.setVerifyEmail(true);
+    realm.setResetPasswordAllowed(true);
+    return realm;
+  }
+
+  private UserRepresentation setupUser() {
+    UserRepresentation user = new UserRepresentation();
+    CredentialRepresentation credentials = setupUserCredentials();
+    user.setEmail("init@test.com");
+    user.setEnabled(true);
+    user.setFirstName("initial");
+    user.setLastName("user");
+    user.setEmailVerified(true);
+    user.setCredentials(List.of(credentials));
+    return user;
+  }
+
+  private CredentialRepresentation setupUserCredentials() {
+    CredentialRepresentation credentials = new CredentialRepresentation();
+    credentials.setType(CredentialRepresentation.PASSWORD);
+    credentials.setValue("password");
+    credentials.setTemporary(false);
+    return credentials;
+  }
+
+  private ClientRepresentation setupClient(String realmName) {
+    ClientRepresentation client = new ClientRepresentation();
+    client.setClientId(realmName);
+    client.setDirectAccessGrantsEnabled(true);
+    client.setPublicClient(true);
+    return client;
+  }
+
+  private boolean realmExists(String realmName) {
+    LOGGER.debug("Checking if realm " + realmName + " exists");
+    List<RealmRepresentation> realms = this.keycloak.realms().findAll();
+    return realms.stream().anyMatch(realm -> realm.getRealm().equals(realmName));
+  }
+}
