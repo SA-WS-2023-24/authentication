@@ -1,45 +1,34 @@
 package com.htwberlin.userservice.user.controller;
 
-//import com.htwberlin.userservice.core.domain.service.interfaces.IKeycloakAdminClientService;
-
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-//@RequestMapping("/v1/")
+@RequestMapping("/user")
 public class UserController {
 
-//    private final IKeycloakAdminClientService keycloakService;
-//
-//    @Autowired
-//    public UserController(IKeycloakAdminClientService keycloakService) {
-//        this.keycloakService = keycloakService;
-//    }
-
-//    @PostMapping(path = "/user")
-//    public @ResponseBody String create() {
-//        OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-////        this.keycloakService.createUser();
-//        return "user created: " + user.getName();
+//    @GetMapping("/login")
+//    public ResponseEntity<String> login() {
+//        return ResponseEntity.ok("Login");
 //    }
 //
-//    @GetMapping("/test")
-//    public @ResponseBody String test() {
-//        return "test";
+//    @GetMapping("/authorize")
+//    public ResponseEntity<String> authorize() {
+//        return ResponseEntity.ok("Authorize");
 //    }
 
-    @GetMapping("/")
-    public String index(@AuthenticationPrincipal Jwt jwt) {
-        return String.format("Hello, %s!", jwt.getClaimAsString("preferred_username"));
+    @GetMapping("/access/{param}")
+    public ResponseEntity<OAuth2User> access(@PathVariable String param, OAuth2AuthenticationToken token) {
+        return ResponseEntity.ok(token.getPrincipal());
     }
 
-    @GetMapping("/protected/premium")
-    public String premium(@AuthenticationPrincipal Jwt jwt) {
-        return String.format("Hello, %s! You are a premium user!",
-            jwt.getClaimAsString("preferred_username"));
+    @GetMapping("/profile")
+    public ResponseEntity<String> profile() {
+        return ResponseEntity.ok("Profile");
     }
 }

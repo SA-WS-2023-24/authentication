@@ -25,6 +25,9 @@ public class KeycloakLoader implements CommandLineRunner {
   @Value("${keycloak.realm}")
   private String kcRealm;
 
+  @Value("${keycloak.client-id}")
+  private String kcClientId;
+
   private final Keycloak keycloak;
   private static final Logger LOGGER = LoggerFactory.getLogger(KeycloakLoader.class);
 
@@ -47,7 +50,7 @@ public class KeycloakLoader implements CommandLineRunner {
   private void setupKeycloak() {
     RealmRepresentation realm = this.setupRealm(kcRealm);
     UserRepresentation user = this.setupUser();
-    ClientRepresentation client = this.setupClient(kcRealm);
+    ClientRepresentation client = this.setupClient(kcClientId);
 
     this.keycloak.realms().create(realm);
     this.keycloak.realm(kcRealm).clients().create(client);
@@ -116,9 +119,9 @@ public class KeycloakLoader implements CommandLineRunner {
     return credentials;
   }
 
-  private ClientRepresentation setupClient(String realmName) {
+  private ClientRepresentation setupClient(String name) {
     ClientRepresentation client = new ClientRepresentation();
-    client.setClientId(realmName);
+    client.setClientId(name);
     client.setDirectAccessGrantsEnabled(true);
     client.setPublicClient(true);
     return client;
