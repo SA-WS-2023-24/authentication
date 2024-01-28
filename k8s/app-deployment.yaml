@@ -16,7 +16,9 @@ spec:
         - name: spring-boot-app
           image: x-mister/authentication-service:latest
           imagePullPolicy: IfNotPresent
-#          env:
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
 #            - name: SPRING_DATASOURCE_URL
 #              value: jdbc:postgresql://postgres:5432/postgres
 #            - name: SPRING_DATASOURCE_USERNAME

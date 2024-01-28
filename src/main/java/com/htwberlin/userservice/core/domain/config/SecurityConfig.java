@@ -1,5 +1,6 @@
 package com.htwberlin.userservice.core.domain.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.web.SecurityFilterChain;
@@ -9,23 +10,29 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+  @Value("${keycloak.auth-uri}")
+  private String authUri;
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
+        .csrf()
+            .disable()
         .authorizeHttpRequests((authorize) -> authorize
-            .requestMatchers("/user/login", "/user/authorize", "/user/access/*")
+            .requestMatchers("/user/login", "/user/auth", "/user/access/*")
             .permitAll()
             .anyRequest()
             .authenticated()
         )
         .oauth2Login(oauth2 -> oauth2
-            .defaultSuccessUrl("/user/profile")
             .loginPage("/user/login")
             .authorizationEndpoint()
-            .baseUri("/user/authorize")
-            .and()
+                .baseUri("/user/auth")
+                .and()
             .redirectionEndpoint()
-            .baseUri("/user/access/*")
+                .baseUri("/user/access/*")
+                .and()
+            .defaultSuccessUrl("/user/profile", true)
         );
 
     return http.build();

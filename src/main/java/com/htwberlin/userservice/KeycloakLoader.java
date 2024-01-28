@@ -124,6 +124,7 @@ public class KeycloakLoader implements CommandLineRunner {
     client.setClientId(name);
     client.setDirectAccessGrantsEnabled(true);
     client.setPublicClient(true);
+    client.setRedirectUris(List.of("localhost:8081/user/access/*"));
     return client;
   }
 
