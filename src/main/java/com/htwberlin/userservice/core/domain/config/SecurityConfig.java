@@ -19,19 +19,20 @@ public class SecurityConfig {
         .csrf()
             .disable()
         .authorizeHttpRequests((authorize) -> authorize
-            .requestMatchers("/user/login", "/user/auth", "/user/access/*")
+//            .requestMatchers("/user/login", "/user/auth", "/user/access/*")
+            .requestMatchers("/v1/product/**", "/user/login")
             .permitAll()
             .anyRequest()
             .authenticated()
         )
         .oauth2Login(oauth2 -> oauth2
-            .loginPage("/user/login")
-            .authorizationEndpoint()
-                .baseUri("/user/auth")
-                .and()
-            .redirectionEndpoint()
-                .baseUri("/user/access/*")
-                .and()
+//            .loginPage("/user/login")
+//            .authorizationEndpoint()
+//                .baseUri("/user/auth")
+//                .and()
+//            .redirectionEndpoint()
+//                .baseUri("/user/access/*")
+//                .and()
             .defaultSuccessUrl("/user/profile", true)
         );
 

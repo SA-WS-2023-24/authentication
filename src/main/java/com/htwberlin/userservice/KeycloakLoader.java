@@ -28,6 +28,9 @@ public class KeycloakLoader implements CommandLineRunner {
   @Value("${keycloak.client-id}")
   private String kcClientId;
 
+  @Value("${keycloak.redirect-uri}")
+  private String kcRedirectUri;
+
   private final Keycloak keycloak;
   private static final Logger LOGGER = LoggerFactory.getLogger(KeycloakLoader.class);
 
@@ -50,11 +53,11 @@ public class KeycloakLoader implements CommandLineRunner {
   private void setupKeycloak() {
     RealmRepresentation realm = this.setupRealm(kcRealm);
     UserRepresentation user = this.setupUser();
-    ClientRepresentation client = this.setupClient(kcClientId);
+    ClientRepresentation client = this.setupClient(kcClientId, List.of(kcRedirectUri));
 
     this.keycloak.realms().create(realm);
-    this.keycloak.realm(kcRealm).clients().create(client);
     this.keycloak.realm(kcRealm).users().create(user);
+    this.keycloak.realm(kcRealm).clients().create(client);
   }
 
   private void connectToKeycloak() {
@@ -89,6 +92,7 @@ public class KeycloakLoader implements CommandLineRunner {
   }
 
   private RealmRepresentation setupRealm(String name) {
+    LOGGER.debug("Setting up realm " + name);
     RealmRepresentation realm = new RealmRepresentation();
     realm.setRealm(name);
     realm.setEnabled(true);
@@ -100,6 +104,7 @@ public class KeycloakLoader implements CommandLineRunner {
   }
 
   private UserRepresentation setupUser() {
+    LOGGER.debug("Setting up user");
     UserRepresentation user = new UserRepresentation();
     CredentialRepresentation credentials = setupUserCredentials();
     user.setEmail("init@test.com");
@@ -119,12 +124,13 @@ public class KeycloakLoader implements CommandLineRunner {
     return credentials;
   }
 
-  private ClientRepresentation setupClient(String name) {
+  private ClientRepresentation setupClient(String name, List<String> uris) {
+    LOGGER.debug("Setting up client " + name + " with redirect uris " + uris.get(0));
     ClientRepresentation client = new ClientRepresentation();
     client.setClientId(name);
     client.setDirectAccessGrantsEnabled(true);
     client.setPublicClient(true);
-    client.setRedirectUris(List.of("localhost:8081/user/access/*"));
+    client.setRedirectUris(uris);
     return client;
   }
 
