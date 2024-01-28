@@ -22,10 +22,10 @@ public class UserController {
 //        return ResponseEntity.ok("Authorize");
 //    }
 
-    @GetMapping("/access/{param}")
-    public ResponseEntity<OAuth2User> access(@PathVariable String param, OAuth2AuthenticationToken token) {
-        return ResponseEntity.ok(token.getPrincipal());
-    }
+//    @GetMapping("/access/{param}")
+//    public ResponseEntity<OAuth2User> access(@PathVariable String param, OAuth2AuthenticationToken token) {
+//        return ResponseEntity.ok(token.getPrincipal());
+//    }
 
     @GetMapping("/profile")
     public ResponseEntity<String> profile() {

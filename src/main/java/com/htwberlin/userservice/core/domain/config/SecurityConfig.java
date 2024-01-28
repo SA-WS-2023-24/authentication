@@ -10,8 +10,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-  @Value("${keycloak.auth-uri}")
-  private String authUri;
+  @Value("${keycloak.redirect-uri}")
+  private String kcRedirectUri;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -20,7 +20,7 @@ public class SecurityConfig {
             .disable()
         .authorizeHttpRequests((authorize) -> authorize
 //            .requestMatchers("/user/login", "/user/auth", "/user/access/*")
-            .requestMatchers("/v1/product/**", "/user/login")
+            .requestMatchers("/v1/product/**")
             .permitAll()
             .anyRequest()
             .authenticated()
