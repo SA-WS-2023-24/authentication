@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
     name: keycloak
 spec:
-  serviceName: keycloak
+  serviceName: keycloak-service
   replicas: 1
   selector:
       matchLabels:
@@ -29,7 +29,7 @@ spec:
             - name: DB_VENDOR
               value: POSTGRES
             - name: KC_DB_URL
-              value: jdbc:postgresql://postgres:5432/postgres
+              value: jdbc:postgresql://keycloak-db-service:5432/postgres
             - name: KC_DB
               value: postgres
             - name: KC_DB_USERNAME
@@ -42,12 +42,12 @@ spec:
           volumeMounts:
             - name: keycloak-persistence-storage
               mountPath: /var/lib/keycloak/data
-            - name: realm-config
-              mountPath: /opt/keycloak/realms
+#            - name: realm-config
+#              mountPath: /opt/keycloak/realms
       volumes:
         - name: keycloak-persistence-storage
           persistentVolumeClaim:
             claimName: keycloak-pv-claim
-        - name: realm-config
-          configMap:
-            name: keycloak-config
+#        - name: realm-config
+#          configMap:
+#            name: keycloak-config

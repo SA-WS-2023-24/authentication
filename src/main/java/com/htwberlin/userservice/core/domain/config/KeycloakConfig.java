@@ -28,7 +28,6 @@ public class KeycloakConfig {
 
   @Value("${keycloak.init-client-id}")
   private String kcInitClientId;
-  private final Logger LOGGER = LoggerFactory.getLogger(KeycloakConfig.class);
 
   @Bean
   public Keycloak keycloak() {

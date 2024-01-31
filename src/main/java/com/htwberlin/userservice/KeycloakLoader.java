@@ -1,10 +1,11 @@
 package com.htwberlin.userservice;
 
+import com.htwberlin.userservice.core.domain.config.UserConfigurationProperties;
+import com.htwberlin.userservice.core.domain.model.User;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,11 +32,20 @@ public class KeycloakLoader implements CommandLineRunner {
   @Value("${keycloak.redirect-uri}")
   private String kcRedirectUri;
 
+  @Value("${roles.default-user-role}")
+  private String userRole;
+
+  @Value("${roles.default-admin-role}")
+  private String adminRole;
+
+  private UserConfigurationProperties userConfigurationProperties;
+
   private final Keycloak keycloak;
   private static final Logger LOGGER = LoggerFactory.getLogger(KeycloakLoader.class);
 
-  public KeycloakLoader(Keycloak keycloak) {
+  public KeycloakLoader(Keycloak keycloak, UserConfigurationProperties userConfigurationProperties) {
     this.keycloak = keycloak;
+    this.userConfigurationProperties = userConfigurationProperties;
   }
 
   @Override
@@ -52,13 +62,41 @@ public class KeycloakLoader implements CommandLineRunner {
 
   private void setupKeycloak() {
     RealmRepresentation realm = this.setupRealm(kcRealm);
-    UserRepresentation user = this.setupUser();
     ClientRepresentation client = this.setupClient(kcClientId, List.of(kcRedirectUri));
 
     this.keycloak.realms().create(realm);
-    this.keycloak.realm(kcRealm).users().create(user);
     this.keycloak.realm(kcRealm).clients().create(client);
+    this.setupRoles(realm);
+
+    this.setupInitialUsers(realm);
   }
+
+  private void setupInitialUsers(RealmRepresentation realm) {
+    LOGGER.debug("Setting up initial users");
+    Response response;
+    UserRepresentation user;
+    String userId;
+    List<User> credentials = this.userConfigurationProperties.getCredentials();
+    for (User userProps : credentials) {
+      user = this.setupUser(userProps);
+      response = this.keycloak.realm(kcRealm).users().create(user);
+      userId = CreatedResponseUtil.getCreatedId(response);
+      this.keycloak.realm(realm.getRealm()).users().get(userId).roles().realmLevel().add(
+          List.of(this.keycloak.realm(kcRealm).roles().get(userProps.getRole().name()).toRepresentation())
+      );
+    }
+  }
+
+  private void setupRoles(RealmRepresentation realm) {
+    LOGGER.debug("Setting up roles");
+    RoleRepresentation role;
+    role = this.setupRole(userRole);
+    this.keycloak.realm(kcRealm).roles().create(role);
+    realm.setDefaultRole(role);
+    role = this.setupRole(adminRole);
+    this.keycloak.realm(kcRealm).roles().create(role);
+    this.keycloak.realm(realm.getRealm()).update(realm);
+    }
 
   private void connectToKeycloak() {
     int responseCode;
@@ -98,28 +136,28 @@ public class KeycloakLoader implements CommandLineRunner {
     realm.setEnabled(true);
     realm.setRegistrationAllowed(true);
     realm.setRegistrationEmailAsUsername(true);
-    realm.setVerifyEmail(true);
+    realm.setVerifyEmail(false);
     realm.setResetPasswordAllowed(true);
     return realm;
   }
 
-  private UserRepresentation setupUser() {
-    LOGGER.debug("Setting up user");
+  private UserRepresentation setupUser(User userProps) {
+    LOGGER.debug("Setting up user " + userProps.getEmail() + " with role " + userProps.getRole().name());
     UserRepresentation user = new UserRepresentation();
-    CredentialRepresentation credentials = setupUserCredentials();
-    user.setEmail("init@test.com");
+    CredentialRepresentation credentials = setupUserCredentials(userProps.getPassword());
+    user.setEmail(userProps.getEmail());
     user.setEnabled(true);
-    user.setFirstName("initial");
-    user.setLastName("user");
+    user.setFirstName(userProps.getFirstName());
+    user.setLastName(userProps.getLastName());
     user.setEmailVerified(true);
     user.setCredentials(List.of(credentials));
     return user;
   }
 
-  private CredentialRepresentation setupUserCredentials() {
+  private CredentialRepresentation setupUserCredentials(String value) {
     CredentialRepresentation credentials = new CredentialRepresentation();
     credentials.setType(CredentialRepresentation.PASSWORD);
-    credentials.setValue("password");
+    credentials.setValue(value);
     credentials.setTemporary(false);
     return credentials;
   }
@@ -132,6 +170,15 @@ public class KeycloakLoader implements CommandLineRunner {
     client.setPublicClient(true);
     client.setRedirectUris(uris);
     return client;
+  }
+
+  private RoleRepresentation setupRole(String name) {
+    LOGGER.debug("Setting up role " + name);
+    RoleRepresentation role = new RoleRepresentation();
+    role.setName(name);
+    role.setDescription("Default role for " + name);
+    role.setContainerId(kcRealm);
+    return role;
   }
 
   private boolean realmExists(String realmName) {

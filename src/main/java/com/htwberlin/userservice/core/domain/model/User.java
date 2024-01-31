@@ -8,7 +8,9 @@ import lombok.*;
 @Getter
 @Setter
 public class User {
-    private String username;
+    private String email;
     private String password;
-    private Role role = Role.USER;
+    private String firstName;
+    private String lastName;
+    private Role role;
 }

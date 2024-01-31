@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: spring-boot-app
+  name: keycloak-sb
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: spring-boot-app
+      app: keycloak-sb
   template:
     metadata:
       labels:
-        app: spring-boot-app
+        app: keycloak-sb
     spec:
       containers:
-        - name: spring-boot-app
+        - name: keycloak-sb
           image: x-mister/authentication-service:latest
           imagePullPolicy: IfNotPresent
           env:
