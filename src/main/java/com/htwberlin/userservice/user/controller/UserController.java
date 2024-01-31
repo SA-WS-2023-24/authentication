@@ -3,16 +3,21 @@ package com.htwberlin.userservice.user.controller;
 import com.htwberlin.userservice.core.domain.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.representations.AccessTokenResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/v1/")
@@ -26,41 +31,53 @@ public class UserController {
     @Value("${keycloak.client-id}")
     private String kcClientId;
 
+    @Value("${keycloak.logout-uri}")
+    private String kcLogoutUri;
+
+    private final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
+
     private Keycloak keycloak;
 
     public UserController(Keycloak keycloak) {
         this.keycloak = keycloak;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<AccessTokenResponse> login(@RequestBody User form) {
-        AccessTokenResponse token;
-        Keycloak keycloak = KeycloakBuilder.builder()
+    @GetMapping("/login/{email}/{password}")
+    public ResponseEntity<String> login(@PathVariable String email, @PathVariable String password) {
+//    @PostMapping("/login")
+//    public ResponseEntity<String> login(@RequestBody String email, @RequestBody String password) {
+        LOGGER.debug("login: " + email + " " + password);
+        String token;
+        Keycloak loginKeycloak = KeycloakBuilder.builder()
             .serverUrl(kcServerUrl)
             .realm(kcRealm)
             .clientId(kcClientId)
-            .username(form.getEmail())
-            .password(form.getPassword())
+            .username(email)
+            .password(password)
             .grantType("password")
             .build();
-        token = keycloak.tokenManager().getAccessToken();
-        keycloak.close();
+        token = loginKeycloak.tokenManager().getAccessToken().getToken();
+        LOGGER.debug("token: " + token);
+        loginKeycloak.close();
+        SecurityContextHolder.getContext().setAuthentication(null);
         return ResponseEntity.ok(token);
     }
 
     @GetMapping("/user/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) throws ServletException {
-        request.logout();
-        this.keycloak.realm(kcRealm).users().get("init@test.com").logout();
-        return ResponseEntity.ok("redirect:/v1/index");
+    public ResponseEntity<String> logout(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        OAuth2User user = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String id = user.getAttribute("sub");
+        this.keycloak.realm(kcRealm).users().get(id).logout();
+        HttpSession session = req.getSession();
+        session.invalidate();
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok("logout");
     }
 
     @GetMapping("/user/profile")
     public ResponseEntity<String> profile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        OAuth2User principal = (OAuth2User) authentication.getPrincipal();
         String username = authentication.getName();
-        String cartId = principal.getAttribute("cartId");
         return ResponseEntity.ok(username + "'s profile");
     }
 

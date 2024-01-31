@@ -169,6 +169,7 @@ public class KeycloakLoader implements CommandLineRunner {
     client.setDirectAccessGrantsEnabled(true);
     client.setPublicClient(true);
     client.setRedirectUris(uris);
+    client.setFrontchannelLogout(false);
     return client;
   }
 

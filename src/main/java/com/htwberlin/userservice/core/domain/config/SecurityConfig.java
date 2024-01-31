@@ -29,21 +29,26 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
         .authorizeHttpRequests((authorize) -> authorize
-            .requestMatchers("/v1/index", "/v1/user/cart", "v1/login")
+            .requestMatchers("/v1/login/**", "v1/index")
             .permitAll()
             .anyRequest()
             .authenticated()
         )
+//        .formLogin(formLogin -> formLogin
+//            .loginPage("/v1/login")
+//            .permitAll()
+//        )
         .oauth2Login()
         .and()
         .logout(logout -> logout
-            .logoutUrl("/user/logout")
-            .logoutSuccessHandler(this::logoutSuccessHandler)
-        );
+            .logoutUrl("/v1/user/logout")
+//            .logoutSuccessHandler(this::logoutSuccessHandler)
+//        )
 //        .oauth2Login(oauth2 -> oauth2
 //            .loginProcessingUrl("/v1/login")
 //            .userInfoEndpoint(userInfo -> userInfo
-//                .oidcUserService(oidcUserService())));
+//                .oidcUserService(oidcUserService()))
+        );
 
     return http.build();
   }
