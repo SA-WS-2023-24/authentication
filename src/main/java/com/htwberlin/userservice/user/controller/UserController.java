@@ -1,6 +1,7 @@
 package com.htwberlin.userservice.user.controller;
 
 import com.htwberlin.userservice.core.domain.model.User;
+import com.htwberlin.userservice.core.domain.service.interfaces.IUserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,16 +37,14 @@ public class UserController {
 
     private final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
-    private Keycloak keycloak;
+    private final IUserService userService;
 
-    public UserController(Keycloak keycloak) {
-        this.keycloak = keycloak;
+    public UserController(IUserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping("/login/{email}/{password}")
     public ResponseEntity<String> login(@PathVariable String email, @PathVariable String password) {
-//    @PostMapping("/login")
-//    public ResponseEntity<String> login(@RequestBody String email, @RequestBody String password) {
         LOGGER.debug("login: " + email + " " + password);
         String token;
         Keycloak loginKeycloak = KeycloakBuilder.builder()
@@ -65,19 +64,14 @@ public class UserController {
 
     @GetMapping("/user/logout")
     public ResponseEntity<String> logout(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        OAuth2User user = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String id = user.getAttribute("sub");
-        this.keycloak.realm(kcRealm).users().get(id).logout();
         HttpSession session = req.getSession();
-        session.invalidate();
-        SecurityContextHolder.clearContext();
+        this.userService.logoutUser(session, kcRealm);
         return ResponseEntity.ok("logout");
     }
 
     @GetMapping("/user/profile")
     public ResponseEntity<String> profile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
+        String username = this.userService.getUsername();
         return ResponseEntity.ok(username + "'s profile");
     }
 
@@ -86,21 +80,9 @@ public class UserController {
         return ResponseEntity.ok("test");
     }
 
-    @GetMapping("/index")
-    public ResponseEntity<String> user() {
-        return ResponseEntity.ok("index");
-    }
-
     @GetMapping("/user/cart")
     public ResponseEntity<String> cart(HttpSession session) {
-        String cartId;
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            OAuth2User principal = (OAuth2User) authentication.getPrincipal();
-            cartId = principal.getAttribute("sub");
-        } catch (Exception e) {
-            cartId = session.getId();
-        }
+        String cartId = this.userService.getCartId(session);
         return ResponseEntity.ok("cartId: " + cartId);
     }
 

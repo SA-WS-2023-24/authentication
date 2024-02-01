@@ -1,5 +1,6 @@
 package com.htwberlin.userservice.core.domain.config;
 
+import jakarta.annotation.PreDestroy;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 
@@ -38,5 +39,10 @@ public class KeycloakConfig {
         .password(kcInitPassword)
         .clientId(kcInitClientId)
         .build();
+  }
+
+  @PreDestroy
+  public void shutdown() {
+    this.keycloak().close();
   }
 }

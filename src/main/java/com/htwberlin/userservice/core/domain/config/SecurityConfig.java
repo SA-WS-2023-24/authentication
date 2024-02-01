@@ -1,7 +1,9 @@
 package com.htwberlin.userservice.core.domain.config;
 
+import com.htwberlin.userservice.core.domain.service.interfaces.IUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,54 +21,26 @@ import java.io.IOException;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-  @Value("${keycloak.redirect-uri}")
-  private String kcRedirectUri;
+  @Value("${keycloak.realm}")
+  private String kcRealm;
 
-  @Value("${keycloak.logout-uri}")
-  private String kcLogoutUri;
+  private IUserService userService;
+
+  public SecurityConfig(IUserService userService) {
+    this.userService = userService;
+  }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
         .authorizeHttpRequests((authorize) -> authorize
-            .requestMatchers("/v1/login/**", "v1/index")
+            .requestMatchers("/v1/login/**", "v1/test")
             .permitAll()
             .anyRequest()
             .authenticated()
         )
-//        .formLogin(formLogin -> formLogin
-//            .loginPage("/v1/login")
-//            .permitAll()
-//        )
-        .oauth2Login()
-        .and()
-        .logout(logout -> logout
-            .logoutUrl("/v1/user/logout")
-//            .logoutSuccessHandler(this::logoutSuccessHandler)
-//        )
-//        .oauth2Login(oauth2 -> oauth2
-//            .loginProcessingUrl("/v1/login")
-//            .userInfoEndpoint(userInfo -> userInfo
-//                .oidcUserService(oidcUserService()))
-        );
+        .oauth2Login();
 
     return http.build();
-  }
-
-//  @Bean
-//  public OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
-//    final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
-//    return (userRequest) -> {
-//      OidcUser oidcUser = (OidcUser) delegate.loadUser(userRequest);
-//      return oidcUser;
-//    };
-//  }
-
-  private void logoutSuccessHandler(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-    try {
-      response.sendRedirect(kcLogoutUri);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
   }
 }
