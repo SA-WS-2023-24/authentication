@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: keycloak-sb
-          image: x-mister/authentication-service:latest
+          image: x-mister/user-service:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_PROFILES_ACTIVE

@@ -1,10 +1,10 @@
 apiVersion: skaffold/v4beta8
 kind: Config
 metadata:
-  name: authentication-service
+  name: user-service
 build:
   artifacts:
-    - image: x-mister/authentication-service
+    - image: x-mister/user-service
       docker:
         dockerfile: Dockerfile
   local: {}
