@@ -2,8 +2,6 @@ package com.htwberlin.userservice.core.domain.model;
 
 import lombok.*;
 
-import java.util.List;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -15,5 +13,4 @@ public class User {
     private String firstName;
     private String lastName;
     private Role role;
-    private List<Address> addresses;
 }

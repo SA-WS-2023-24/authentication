@@ -1,5 +1,6 @@
 package com.htwberlin.userservice.core.domain.config;
 
+import com.htwberlin.userservice.core.domain.model.Role;
 import com.htwberlin.userservice.core.domain.service.interfaces.IUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,13 +34,21 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
+        .cors().disable()
+        .csrf().disable()
         .authorizeHttpRequests((authorize) -> authorize
-            .requestMatchers("/v1/login/**", "v1/test")
+            .requestMatchers("/v1/user/cart", "/v1/user/login")
             .permitAll()
             .anyRequest()
             .authenticated()
         )
-        .oauth2Login();
+        .oauth2Login()
+        .and()
+        .oauth2ResourceServer(oauth2ResourceServer -> oauth2ResourceServer
+            .jwt(jwt -> jwt
+                .jwtAuthenticationConverter(this.userService.getJwtAuthenticationConverter())
+            )
+        );
 
     return http.build();
   }

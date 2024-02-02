@@ -1,6 +1,8 @@
 package com.htwberlin.userservice.user.controller;
 
 import com.htwberlin.userservice.core.domain.model.Address;
+import com.htwberlin.userservice.core.domain.model.User;
+import com.htwberlin.userservice.core.domain.model.UserDTO;
 import com.htwberlin.userservice.core.domain.service.interfaces.IUserService;
 
 import jakarta.servlet.http.HttpSession;
@@ -16,9 +18,6 @@ import java.util.Map;
 @RequestMapping("/v1/")
 public class UserController {
 
-    @Value("${keycloak.realm}")
-    private String kcRealm;
-
     private final IUserService userService;
 
     public UserController(IUserService userService) {
@@ -26,16 +25,19 @@ public class UserController {
     }
 
     @GetMapping("/user/logout")
-    public ResponseEntity logout(HttpServletRequest req) {
-        HttpSession session = req.getSession();
-        this.userService.logoutUser(session, kcRealm);
+    public ResponseEntity logout(HttpSession session) {
+        this.userService.logoutUser(session);
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/user/login")
+    public @ResponseBody String login(@RequestBody User user) {
+        return this.userService.loginUser(user.getEmail(), user.getPassword());
+    }
+
     @GetMapping("/user/profile")
-    public ResponseEntity<String> profile() {
-        String username = this.userService.getUsername();
-        return ResponseEntity.ok(username + "'s profile");
+    public @ResponseBody UserDTO profile() {
+        return this.userService.getUser();
     }
 
     @GetMapping("/user/test")
@@ -44,14 +46,13 @@ public class UserController {
     }
 
     @GetMapping("/user/cart")
-    public ResponseEntity<Map<String, String>> cart(HttpSession session) {
-        Map<String, String> cartId = this.userService.getCartId(session);
-        return ResponseEntity.ok(cartId);
+    public @ResponseBody String cart(HttpSession session) {
+        return this.userService.getCartId(session);
     }
 
     @PostMapping("/user/address/add")
     public ResponseEntity<Map<String, String>> address(@RequestBody Address address) {
-        Map<String, String> mapAddr = this.userService.setAddress(address, kcRealm);
+        Map<String, String> mapAddr = this.userService.setAddress(address);
         return ResponseEntity.ok(mapAddr);
     }
 }
