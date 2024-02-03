@@ -8,6 +8,8 @@ import com.htwberlin.userservice.core.domain.service.interfaces.IUserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,8 +17,11 @@ import org.springframework.beans.factory.annotation.Value;
 import java.util.Map;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/v1/")
 public class UserController {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
     private final IUserService userService;
 
@@ -46,8 +51,10 @@ public class UserController {
     }
 
     @GetMapping("/user/cart")
-    public @ResponseBody String cart(HttpSession session) {
-        return this.userService.getCartId(session);
+    public @ResponseBody Map<String, String> cart(HttpSession session) {
+        LOGGER.debug("requesting cartId...");
+        String cartId = this.userService.getCartId(session);
+        return Map.of("cartdId", cartId);
     }
 
     @PostMapping("/user/address/add")

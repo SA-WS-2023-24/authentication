@@ -16,14 +16,19 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.web.cors.CorsConfiguration;
 
 import java.io.IOException;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
   @Value("${keycloak.realm}")
   private String kcRealm;
+
+  @Value("${frontend.url}")
+  private String frontendUrl;
 
   private IUserService userService;
 
@@ -34,7 +39,14 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-        .cors().disable()
+        .cors(cors -> cors.configurationSource(request -> {
+          CorsConfiguration corsConfiguration = new CorsConfiguration();
+          corsConfiguration.setAllowedOrigins(List.of(frontendUrl));
+          corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+          corsConfiguration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+          corsConfiguration.setAllowCredentials(true);
+          return corsConfiguration;
+        }))
         .csrf().disable()
         .authorizeHttpRequests((authorize) -> authorize
             .requestMatchers("/v1/user/cart", "/v1/user/login")
