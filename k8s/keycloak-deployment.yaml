@@ -1,13 +1,14 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
-    name: keycloak
+  name: keycloak
+  labels:
+    app: keycloak
 spec:
-  serviceName: keycloak-service
   replicas: 1
   selector:
-      matchLabels:
-        app: keycloak
+    matchLabels:
+      app: keycloak
   template:
     metadata:
       labels:
@@ -15,13 +16,13 @@ spec:
     spec:
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:23.0.4
-          args: ["start-dev"]
+          image: quay.io/keycloak/keycloak:23.0.6
+          args: ["start-dev", "--import-realm"]
           env:
             - name: KEYCLOAK_ADMIN
-              value: admin
+              value: "admin"
             - name: KEYCLOAK_ADMIN_PASSWORD
-              value: admin
+              value: "admin"
             - name: KEYCLOAK_USER
               value: user
             - name: KEYCLOAK_PASSWORD
@@ -37,17 +38,28 @@ spec:
             - name: KC_DB_PASSWORD
               value: postgres
           ports:
-            - containerPort: 8080
-              name: keycloak
+            - name: http
+              containerPort: 8080
           volumeMounts:
-            - name: keycloak-persistence-storage
-              mountPath: /var/lib/keycloak/data
-#            - name: realm-config
-#              mountPath: /opt/keycloak/realms
+            - name: keycloak-config-volume
+              mountPath: /opt/keycloak/data/import
       volumes:
-        - name: keycloak-persistence-storage
-          persistentVolumeClaim:
-            claimName: keycloak-pv-claim
-#        - name: realm-config
-#          configMap:
-#            name: keycloak-config
+        - name: keycloak-config-volume
+          configMap:
+            name: keycloak-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 30006
+  selector:
+    app: keycloak

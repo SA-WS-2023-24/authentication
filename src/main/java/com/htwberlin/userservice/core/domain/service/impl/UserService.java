@@ -102,6 +102,8 @@ public class UserService implements IUserService {
         String username = this.getUsername();
         LOGGER.debug("Username: " + username);
 
+        LOGGER.info(username);
+        LOGGER.info(session.toString());
         if (username.equals("anonymousUser")) id = session.getId();
         else id = this.getKeycloakId();
 
