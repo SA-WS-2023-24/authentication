@@ -2,10 +2,13 @@ package com.htwberlin.userservice.core.domain.service.impl;
 
 import com.htwberlin.userservice.core.domain.model.Address;
 import com.htwberlin.userservice.core.domain.model.Role;
+import com.htwberlin.userservice.core.domain.model.User;
 import com.htwberlin.userservice.core.domain.model.UserDTO;
 import com.htwberlin.userservice.core.domain.service.interfaces.IUserService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Cookie;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -18,6 +21,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -61,7 +65,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public UserDTO getUser() {
+    public UserDTO getUser(String accessToken, String refreshToken) {
         UserRepresentation userRepresentation = this.getUserRepresentation();
         Address address = this.getAddress(userRepresentation);
         String email = userRepresentation.getEmail();
@@ -85,9 +89,11 @@ public class UserService implements IUserService {
         UserResource userResource = this.getUserResource();
         RoleMappingResource roleMappingResource = userResource.roles();
         List<RoleRepresentation> roles = roleMappingResource.realmLevel().listEffective();
-        String role = roles.get(1).getName();
+        String role = roles.get(0).getName();
+        if (role.equals("default-roles-pcpartshop")) role = roles.get(1).getName();
         return role;
     }
+
 
     @Override
     public String getUsername() {
@@ -125,13 +131,13 @@ public class UserService implements IUserService {
         return auth;
     }
 
-    private OAuth2User getPrincipal() {
-        Authentication auth = this.getAuthentication();
-        OAuth2User principal = (OAuth2User) auth.getPrincipal();
-        return principal;
-    }
+//    private OAuth2User getPrincipal() {
+//        Authentication auth = this.getAuthentication();
+//        OAuth2User principal = (OAuth2User) auth.getPrincipal();
+//        return principal;
+//    }
 
-    private Jwt getPrincipal(boolean jwt) {
+    private Jwt getPrincipal() {
         JwtAuthenticationToken auth = (JwtAuthenticationToken) this.getAuthentication();
         Jwt principal = (Jwt) auth.getPrincipal();
         return principal;
@@ -139,13 +145,8 @@ public class UserService implements IUserService {
 
     private String getKeycloakId() {
         String keycloakId;
-        try {
-            OAuth2User principal = this.getPrincipal();
-            keycloakId = principal.getAttribute("sub");
-        } catch (Exception e) {
-            Jwt principal = this.getPrincipal(true);
-            keycloakId = principal.getClaim("sub");
-        }
+        Jwt principal = this.getPrincipal();
+        keycloakId = principal.getClaim("sub");
         LOGGER.debug("Keycloak ID: " + keycloakId);
         return keycloakId;
     }
@@ -158,8 +159,7 @@ public class UserService implements IUserService {
 
     private UserResource getUserResource() {
         String id = this.getKeycloakId();
-        RealmResource realmResource = this.getKCRealmResourceByName(kcRealm);
-        UserResource userResource = realmResource.users().get(id);
+        UserResource userResource = this.getKCUserResourceById(id);
         return userResource;
     }
 
@@ -170,31 +170,29 @@ public class UserService implements IUserService {
     }
 
     private void logoutKeycloakUser() {
-        String id = this.getKeycloakId();
-        UserResource user = this.getKCUserResourceById(id);
+        UserResource user = this.getUserResource();
         user.logout();
     }
 
     @Override
-    public String loginUser(String email, String password) {
+    public Map<String, String> loginUser(User user) {
         String accessToken, refreshToken;
 
         Keycloak kc = KeycloakBuilder.builder()
             .serverUrl(kcServerUrl)
             .realm(kcRealm)
             .clientId(kcClientId)
-            .username(email)
-            .password(password)
+            .username(user.getEmail())
+            .password(user.getPassword())
             .grantType("password")
             .build();
 
-        AccessTokenResponse res = kc.tokenManager().getAccessToken();
-        accessToken = res.getToken();
-        refreshToken = res.getRefreshToken();
-        LOGGER.debug("access_token: " + accessToken);
-        LOGGER.debug("refresh_token: " + refreshToken);
+        AccessTokenResponse tokenRes = kc.tokenManager().getAccessToken();
+        accessToken = tokenRes.getToken();
+        refreshToken = tokenRes.getRefreshToken();
         kc.close();
-        return accessToken;
+
+        return Map.of("access_token", accessToken, "refresh_token", refreshToken);
     }
 
     @Override
